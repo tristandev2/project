@@ -1,0 +1,231 @@
+<div class="card p-4 shadow" style="max-width: 500px; width: 100%;">
+            <h2 class="mb-4 text-center">Registro de Usuario</h2>
+            <form>
+                <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre</label>
+                <input type="text" class="form-control" id="nombre" placeholder="Introduce tu nombre" />
+                </div>
+                <div class="mb-3">
+                <label for="apellido" class="form-label">Apellido</label>
+                <input type="text" class="form-control" id="apellido" placeholder="Introduce tu apellido" />
+                </div>
+                <div class="mb-3">
+                <label for="email" class="form-label">Correo Electrónico</label>
+                <input type="email" class="form-control" id="email" placeholder="Introduce tu correo electrónico" />
+                </div>
+                <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" placeholder="Introduce tu contraseña" />
+                </div>
+                <div class="mb-3">
+                <label for="confirm-password" class="form-label">Confirmar Contraseña</label>
+                <input type="password" class="form-control" id="confirm-password" placeholder="Confirma tu contraseña" />
+                </div>
+                <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" value="" id="terms" />
+                <label class="form-check-label" for="terms">
+                    Acepto los términos y condiciones
+                </label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+            </form>
+            </div>
+
+
+
+
+            <script src="../Funcionalidad/registrousuarios.js"></script>
+            
+            
+            
+            
+            document.querySelector("#logout").addEventListener("click", function() {
+    // Limpiar el almacenamiento local (localStorage)
+    localStorage.removeItem("sessionToken");     //sessionToken se utiliza para validar que el usuario este registrado
+    sessionStorage.removeItem("sessionToken");
+
+    // Redirigir al usuario a la página de login
+    window.location.href = "../Login.html";
+});
+
+// Evitar que el usuario regrese a la página anterior después de cerrar sesión
+if (!localStorage.getItem("sessionToken") && !sessionStorage.getItem("sessionToken")) {
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", function() {
+        window.location.href = "../Login.html";
+    });
+};
+
+
+//
+Registro Funcional
+const registrousuario = document.querySelector('#registrousuario')
+registrousuario.addEventListener('submit',(e)=>{
+    e.preventDefault()
+    const nombre = document.querySelector('#nombre').value.trim();
+    const apellido = document.querySelector('#apellido').value.trim();
+    const email = document.querySelector('#email').value.trim();
+    const password = document.querySelector('#password').value.trim(); //La fuincion trim() elimina los espacios en blanco lo cual no deja que el label quede en blanco
+    
+    //condicion para formulario vacio
+    if(!nombre || !apellido || !email || !password){
+        return alert('Hay algun espacio sin rellenar')
+    }
+    
+    const User = JSON.parse(localStorage.getItem('user')) || []
+    //valida que el correo ingresado no sea el mismo
+    const registroE = User.find(user=>user.email===email)
+    //
+    
+    if(registroE){
+        return alert('El correo ya existe')
+    }
+    //Manda el archivo json al localStorage
+    User.push({nombre: nombre,apellido: apellido,email: email, password: password,})
+    localStorage.setItem('user',JSON.stringify(User))
+    alert('Registro Exitoso')
+    //Resetear el Formulario
+    document.querySelector('#registrousuario').reset();
+    //me redireccione al login
+    window.location.href = './login.html'
+})
+
+//Login
+const loginusuarios = document.querySelector('#loginusuarios')
+loginusuarios.addEventListener('submit', (e)=>{
+    e.preventDefault()
+    const email = document.querySelector('#email').value.trim();
+    const password = document.querySelector('#password').value.trim();
+    
+    if(email === '' || password === ''){
+        return alert('No puede dejar campos vacios')
+    }
+    const User = JSON.parse(localStorage.getItem('user')) || []
+    const UserValidations = User.find(user => user.email === email && user.password === password)
+    if(!UserValidations){
+        return alert('Usuario y/o Contraseña incorrecto')
+    }
+    
+    alert(`Bienvenido, ${UserValidations.nombre}`)
+    localStorage.setItem('login_success',JSON.stringify(UserValidations))
+    window.location.href = './index.html'
+
+})
+
+import (
+	"database/sql"
+	"log"
+	"net/http"
+	"text/template"
+
+	_"github.com/go-sql-driver/mysql"
+)
+func ConexionDB(conexion *sql.DB){
+	//Conectar a la base de datos
+	Driver:="mysql"
+	Usuario:="root"
+	Contrasenia:=""
+	Nombre:="facturacion"
+	
+	
+	conexion,err:= sql.Open(Driver,Usuario+":"+Contrasenia+"@tcp(127.0.0.1)/"+Nombre)
+	
+	if err != nil {
+		panic(err.Error())
+	}
+	return conexion
+}
+
+var templates = template.Must(template.ParseGlob("templates/*"))
+
+func main() {
+	http.HandleFunc("/", Login)
+	http.HandleFunc("/Registro", registro)
+
+	log.Println("Serve Active")
+	err:=http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ",err)
+	}
+
+}
+func Login(w http.ResponseWriter, r *http.Request) {
+	
+	err:=templates.ExecuteTemplate(w, "Login.html", nil)
+	
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+func registro(w http.ResponseWriter,r *http.Request){
+	err:= templates.ExecuteTemplate(w,"Registro.html", nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+guarda registro en la base de datos
+func insertar(w http.ResponseWriter, r *http.Request) {
+    if r.Method == http.MethodPost {
+        // Obtener los datos del formulario
+        name := r.FormValue("name")
+        apellido := r.FormValue("apellido")
+        email := r.FormValue("email")
+        password := r.FormValue("password")
+
+        // Aquí haciendo hashing a la contraseña antes de guardarla
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+        if err != nil {
+            http.Error(w, "Error al encriptar la contraseña", http.StatusInternalServerError)
+            return
+        }
+
+        // Insertar los datos en la base de datos
+        _, err = db.Exec("INSERT INTO usuarios (name, apellido, email, password) VALUES (?, ?, ?, ?)",
+            name, apellido, email, hashedPassword)
+        if err != nil {
+            http.Error(w, "Error al insertar el usuario en la base de datos", http.StatusInternalServerError)
+            return
+        }
+
+        // Enviar respuesta al cliente
+        response := templates.ExecuteTemplate(w, "Login.html", nil)
+		if response != nil {
+			http.Error(w, response.Error(), http.StatusInternalServerError)
+			
+		}
+    } else {
+        http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+    }
+}
+codigo js antes del sweetalert
+document.addEventListener('DOMContentLoaded', function() {
+    const registroForm = document.getElementById('registrousuario');
+
+    registroForm.addEventListener('submit', function(event) {
+        event.preventDefault(); // Evita el envío normal del formulario
+
+        const name = document.getElementById('name').value;
+        const apellido = document.getElementById('apellido').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        axios.post('/insertar', {
+            name: name,
+            apellido: apellido,
+            email: email,
+            password: password
+        })
+        .then(function(response) {
+            // Maneja la respuesta del servidor
+            console.log('Registro exitoso:', response.data);
+            // Redirige o muestra un mensaje de éxito
+            window.location.href = '/login'; // O la URL que desees
+        })
+        .catch(function(error) {
+            // Maneja los errores
+            console.error('Error al registrar:', error);
+            // Muestra un mensaje de error al usuario
+        });
+    });
+});
